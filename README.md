@@ -125,7 +125,7 @@ The application requires the following dependencies, as listed in [`requirements
 - **FastAPI**: For building the web application.
 - **LangChain and LangGraph**: For RAG and workflow orchestration.
 - **PGVector**: For vector-based document storage.
-- **Tesseract OCR**: For text extraction from scanned PDFs.
+- **Docling**: For text extraction from general and scanned PDFs.
 - **Hugging Face Transformers**: For cross-encoder reranking.
 - **PostgreSQL**: For storing vector embeddings and application data.
 

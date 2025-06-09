@@ -18,6 +18,7 @@ from psycopg import Connection
 import psycopg
 from app.config import settings
 from app.logging_config import logger
+from app.utils.context import customer_id_context
 
 # Environment variables
 os.environ["LANGCHAIN_TRACING_V2"] = settings.langchain_tracing_v2
@@ -217,7 +218,7 @@ def init_workflow():
                 logger.error(f"Error getting slots for date {date}: {e}")
                 return "Error retrieving slots"
 
-        def bookSlot(customer_id: str, date: str, time_slot: str):
+        def bookSlot(date: str, time_slot: str):
             """
             Books the first available appointment slot for a given date and time.
 
@@ -231,6 +232,7 @@ def init_workflow():
                     If all matching slots are booked or not found, returns a failure message.
             """
             try:
+                customer_id = customer_id_context.get()
                 with psycopg.connect(settings.db_uri) as conn:
                     with conn.cursor() as cur:
                         cur.execute("""
