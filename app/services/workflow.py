@@ -125,7 +125,7 @@ def init_workflow():
 
         # Use a cross-encoder reranker to compress the retrieved context.
         try:
-            model_dir = "app/models/bge-reranker-v2-m3/models--BAAI--bge-reranker-v2-m3/snapshots/953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e"
+            model_dir = "app/models/bge-reranker-v2-m3"
             reranker = HuggingFaceCrossEncoder(model_name=model_dir)
             reranker_compressor = CrossEncoderReranker(model=reranker, top_n=5)
             final_retriever = ContextualCompressionRetriever(

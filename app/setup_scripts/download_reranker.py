@@ -1,7 +1,7 @@
 import os
 from huggingface_hub import snapshot_download
 
-local_dir = ".app/models/bge-reranker-v2-m3"
+local_dir = "app/models/bge-reranker-v2-m3"
 repo_id = "BAAI/bge-reranker-v2-m3"
 
 # Create the directory if it doesn't exist

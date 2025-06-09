@@ -1,15 +1,23 @@
 import psycopg
 from datetime import datetime, timedelta
 import uuid
+from dotenv import load_dotenv
+import os
 
-# PostgreSQL connection string
-DB_CONN_STR = "postgresql://postgres:example@localhost:5432/postgres?sslmode=disable"
+# Load environment variables from .env file
+load_dotenv()
+
+# PostgreSQL connection string from .env
+DB_URI = os.getenv("DB_URI")
+
+if not DB_URI:
+    raise ValueError("❌ Database connection string (DB_URI) is not set in the .env file.")
 
 # -----------------------------------------
 # Step 1: Initialize Unified Appointment DB
 # -----------------------------------------
 def init_db():
-    with psycopg.connect(DB_CONN_STR) as conn:
+    with psycopg.connect(DB_URI) as conn:
         with conn.cursor() as cur:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS appointments (
@@ -19,6 +27,7 @@ def init_db():
                     date DATE NOT NULL,
                     time_slot TIME NOT NULL,
                     booked BOOLEAN DEFAULT FALSE,
+                    mode VARCHAR(50),  -- NULL if not booked
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(agent_id, date, time_slot)
                 )
@@ -30,7 +39,7 @@ def init_db():
 # Step 2: Populate Available Time Slots
 # -----------------------------------------
 def populate_time_slots_for_agent(agent_id, start_date, days=1):
-    with psycopg.connect(DB_CONN_STR) as conn:
+    with psycopg.connect(DB_URI) as conn:
         with conn.cursor() as cur:
             start_dt = datetime.strptime(start_date, "%Y-%m-%d")
 

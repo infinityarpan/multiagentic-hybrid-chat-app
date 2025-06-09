@@ -1,12 +1,19 @@
 import psycopg
 import uuid
 from datetime import datetime
+import os
 
-# Database connection string (update these values)
-DB_CONN_STR = "postgresql://postgres:example@localhost:5432/postgres?sslmode=disable"
+# Load environment variables from .env file
+load_dotenv()
+
+# PostgreSQL connection string from .env
+DB_URI = os.getenv("DB_URI")
+
+if not DB_URI:
+    raise ValueError("❌ Database connection string (DB_URI) is not set in the .env file.")
 
 def init_customer_db():
-    with psycopg.connect(DB_CONN_STR) as conn:
+    with psycopg.connect(DB_URI) as conn:
         with conn.cursor() as cur:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS customers (
@@ -29,7 +36,7 @@ def insert_demo_customers():
         ("Charlie Lee", "charlie@example.com", None, "2025-03-20 11:00:00", "2025-06-07 15:15:00"),
     ]
 
-    with psycopg.connect(DB_CONN_STR) as conn:
+    with psycopg.connect(DB_URI) as conn:
         with conn.cursor() as cur:
             for name, email, gender, created_at, last_login in demo_customers:
                 custom_id = uuid.uuid4()
@@ -43,7 +50,7 @@ def insert_demo_customers():
 
 
 def print_customers():
-    with psycopg.connect(DB_CONN_STR) as conn:
+    with psycopg.connect(DB_URI) as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM customers")
             rows = cur.fetchall()
