@@ -2,7 +2,13 @@
 
 ![Application Overview](app/assets/graph_plot.png)
 
-This project is a FastAPI application designed to handle customer interactions and manage document processing efficiently. It leverages advanced parsing strategies, Retrieval-Augmented Generation (RAG), and a supervisor-based orchestration of tools to provide robust functionality.
+🚀 This AI-powered system delivers intelligent customer interaction and advanced document understanding by combining OCR-based parsing, Retrieval-Augmented Generation (RAG), live web search, and multi-agent orchestration—enabling seamless document-driven conversational intelligence.
+
+It processes both scanned and digital PDFs using Docling integrated with Tesseract OCR, converting them into structured Markdown and storing semantic embeddings in PostgreSQL with PGVector. A sophisticated hybrid retrieval engine leverages vector similarity and BM25 keyword search, further refined by a cross-encoder reranker to produce high-precision, context-aware responses.
+
+The system features specialized agents coordinated by a central Supervisor to ensure modular and scalable automation. The Research Agent enriches responses by retrieving relevant internal documents through the RAG pipeline and augmenting information with real-time web search, skillfully balancing internal knowledge with live external data. Meanwhile, the Appointment Agent handles complete appointment scheduling workflows by fetching the current time, retrieving available customer service representative slots from the database, and booking appointments while logging all necessary information.
+
+This comprehensive design empowers domain-specific automation with natural, dynamic interactions grounded in both deep document understanding and up-to-date external knowledge, making it ideal for smart enterprise assistants, document-intensive workflows, and context-aware support systems.
 
 ---
 
@@ -44,24 +50,25 @@ The application implements a Retrieval-Augmented Generation (RAG) approach to en
 The application orchestrates multiple tools and agents using a supervisor for modular and scalable task management:
 - **Research Agent**:
   - Handles research-related tasks by retrieving documents and performing web searches.
-  - Integrates with the RAG pipeline for document retrieval.
+  - Integrates with retriever_tool incorporating the RAG pipeline for document retrieval, and web_search tool for getting specific information.
 - **Appointment Agent**:
   - Manages appointment scheduling tasks, including finding available slots and booking appointments.
-  - Interacts with the database to ensure accurate scheduling.
+  - It manages three tools findCurrentTime, getSlots and bookSlot, for fetching current time, fetching all available slots and booking the slot with an CSR.
+  - Interacts with the database to retrieve and log all the information
 - **Supervisor**:
   - Coordinates the agents, ensuring tasks are assigned to the appropriate agent.
   - Manages the flow of information between agents and tools, ensuring seamless task execution.
 
 ### 4. Database Design
-The application uses PostgreSQL as the primary database for storing structured and unstructured data:
+The application uses PostgreSQL as the primary database for storing all the information:
 - **Vector Embeddings**:
   - Stored in the `langchain_pg_embedding` table for document retrieval.
-- **Agents**:
-  - Stored in the `agents` table, containing metadata about the agents used in the application.
-- **Appointments**:
-  - Stored in the `appointments` table, managing customer appointment data.
+- **Agent details**:
+  - Stored in the `agents` table, containing agent_id, name, email, gender.
+- **Appointment details**:
+  - Stored in the `appointments` table, containing agent avaibility by date and time, with allocation for customer.
 - **Customers**:
-  - Stored in the `customers` table, containing customer profiles and interaction history.
+  - Stored in the `customers` table, containing customer profiles like customer_id, name, email, gender.
 - **Checkpoint Tables**:
   - Includes `checkpoint_blobs`, `checkpoint_migrations`, `checkpoint_writes`, and `checkpoints` for managing application checkpoints and migrations.
 
@@ -77,9 +84,9 @@ The application provides RESTful APIs for seamless interaction:
 ## Key Design Decisions
 
 ### Parsing Strategy
-- **Why OCR with Tesseract?**
-  - Tesseract is a reliable and open-source OCR tool that works well for scanned PDFs.
-  - It ensures text extraction even from non-digital documents.
+- **Why Docling?**
+  - Docling is an open-source tool that streamlines document processing across formats, with advanced PDF parsing and seamless GenAI integration.
+  - Supports EasyOCR and Tesseract supporting extraction from scanned documents.
 - **Why Markdown Conversion?**
   - Markdown provides a structured format for processing and splitting content into meaningful chunks.
 
@@ -153,7 +160,7 @@ Follow these steps to set up and run the application:
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/infinityarpan/multiagentic-hybrid-chat-app.git
 cd fastapi-app
 ```
 
