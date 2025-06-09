@@ -183,14 +183,14 @@ def init_workflow():
             """
             Get the current date and time in a formatted string.
             Returns:
-                str: Current date and time formatted as "YYYY-MM-DD HH:MM".
+                str: The current date and time formatted as "YYYY-MM-DD HH:MM".
             """
             try:
                 now = datetime.now()
-                return now.strftime("%Y-%m-%d %H:%M")
+                return f"The current time is: {now.strftime('%Y-%m-%d %H:%M')}"
             except Exception as e:
                 logger.error(f"Error fetching current time: {e}")
-                return "Time error"
+                return "Unable to retrieve current time."
 
         def getSlots(date: str):
             """
@@ -218,7 +218,7 @@ def init_workflow():
                 logger.error(f"Error getting slots for date {date}: {e}")
                 return "Error retrieving slots"
 
-        def bookSlot(date: str, time_slot: str):
+        def bookSlot(date: str, time_slot: str, mode: str = None):
             """
             Books the first available appointment slot for a given date and time.
 
@@ -226,12 +226,19 @@ def init_workflow():
                 customer_id (str): UUID formatted string.
                 date (str): The date in 'YYYY-MM-DD' format.
                 time_slot (str): The time slot in 'HH:MM' format.
+                mode (str): The mode of appointment ('virtual', 'telephonic' or 'in-person').
 
             Returns:
                 str: Success message with agent ID and appointment time if booked.
                     If all matching slots are booked or not found, returns a failure message.
             """
             try:
+                if not mode:
+                    logger.warning("Mode not provided. Please specify 'virtual', 'telephonic' or 'in-person'.")
+                    return "Mode not specified. Please provide 'virtual', 'telephonic' or 'in-person'."
+                if mode not in ["virtual", "telephonic", "in-person"]:
+                    logger.warning(f"Invalid mode provided: {mode}. Must be 'virtual', 'telephonic' or 'in-person'.")
+                    return "Invalid mode. Please choose either 'virtual', 'telephonic' or 'in-person'."
                 customer_id = customer_id_context.get()
                 with psycopg.connect(settings.db_uri) as conn:
                     with conn.cursor() as cur:
@@ -243,22 +250,22 @@ def init_workflow():
 
                         if not results:
                             logger.warning(f"No slots found for {date} at {time_slot}.")
-                            return "❌ No slots found for that date and time."
+                            return "No slots found for that date and time."
 
                         available_slot = next((row for row in results if not row[2]), None)
                         if available_slot:
                             appointment_id, agent_id, _ = available_slot
                             cur.execute("""
                                 UPDATE appointments
-                                SET customer_id = %s, booked = TRUE
+                                SET customer_id = %s, booked = TRUE, mode = %s
                                 WHERE id = %s
-                            """, (customer_id, appointment_id))
+                            """, (customer_id, mode, appointment_id))
                             conn.commit()
                             logger.info(f"Slot booked for customer {customer_id} at {time_slot} on {date}.")
-                            return f"✅ Slot booked with Agent {agent_id} at {time_slot} on {date}."
+                            return f"Slot booked with Agent {agent_id} at {time_slot} on {date}."
                         else:
                             logger.warning(f"All slots already booked for {date} at {time_slot}.")
-                            return "⚠️ All slots at this time are already booked."
+                            return "All slots at this time are already booked."
             except Exception as e:
                 logger.error(f"Error booking slot for customer {customer_id} on {date} at {time_slot}: {e}")
                 return "Error booking slot"
@@ -266,18 +273,22 @@ def init_workflow():
         # Initialize the appointment agent.
         try:
             appointment_agent = create_react_agent(
-                model=init_chat_model("gpt-4.1-nano-2025-04-14", temperature=0.3),
+                model=init_chat_model("gpt-4.1-nano-2025-04-14", temperature=0.1),
                 tools=[findCurrentTime, getSlots, bookSlot],
-                prompt=(
-                    "- You are an appointment scheduling assistant handling ONLY appointment-related queries. "
-                    "- Extract and normalize appointment date and time from user input (natural language or structured).\n"
-                    "- If the user asks to schedule an appointment ask the user in which day and time the user wants to schedule an appointment.\n"
-                    "- If no time preference is received by you must fetch the current time, then find the appointment availability and return all the available slots.\n"
-                    "- Always take confirmation on the preferred date and time from the user.\n"
-                    "- Always ask for mode of appointment (e.g., 'virtual', 'telephonic') if not provided.\n"
-                    "- Never book the appointment before receiving the complete data, time and mode of appointment.\n"
-                    "- Once all the inputs are clear use tools to book the appointment and inform the user\n"
-                    "- Respond only with JSON, no extra text."
+                prompt = (
+                    "- You are an appointment scheduling assistant and must handle ONLY appointment-related queries. Do not assist with any other type of query.\n"
+                    "- You are strictly prohibited from making parallel tool calls. Always complete one tool call before initiating another.\n"
+                    "- If the user requests to schedule an appointment, always ask for the specific **day** and **time** they prefer.\n"
+                    "- You have access to the following tools: `findCurrentTime`, `getSlots`, and `bookSlot`. Use only these tools for appointment-related tasks.\n"
+                    "- You are NOT allowed to infer or assume the meaning of time-related words such as 'today', 'tomorrow', 'tonight', or 'this evening'. You MUST call the `findCurrentTime` tool whenever any such term is present in the user's input."
+                    "- After retrieving the current date/time, use the `getSlots` tool to retrieve available appointment slots for that date.\n"
+                    "- Even if the user provides a date and/or time, always use the `getSlots` tool for that date to check availability before confirmation.\n"
+                    "- Always confirm the selected date and time with the user before proceeding to the next steps.\n"
+                    "- After date and time confirmation, ask the user for their preferred **mode of appointment** ('virtual', 'telephonic' or 'in-person') if it hasn't been provided.\n"
+                    "- Never book an appointment without knowing the mode of appointment.\n"
+                    "- Strictly use bookSlot for booking the appointment.\n"
+                    "- Respond in a clear, concise, and professional manner. Do not speculate or invent information. Stick strictly to appointment handling.\n"
+                    "- Failure to follow any of the above instructions will result in incorrect behavior and is strictly prohibited."
                 ),
                 name="appointment_agent",
             )
@@ -292,8 +303,9 @@ def init_workflow():
                 model=init_chat_model("gpt-4.1-mini-2025-04-14", temperature=0.7),
                 agents=[research_agent, appointment_agent],
                 prompt=(
-                    "You are a supervisor having access to multiple agents. You have the ability to call various tools for getting the job done. Your limitation is you cannot do parallel tool calls.\n\n"
-                    "Your tasks:\n"
+                    "- You are a supervisor having access to multiple agents.\n"
+                    "- You have the ability to call various agents but you can strictly call one agent at a time.\n"
+                    "- You are good at understanding natural language.\n"
                     "- You always look into history to extract past information and you can avoid unnecessary tool calls\n"
                     "- You should carefully assess the user's intent and route the query to the appropriate agent.\n"
                     "- If the user asks for general information, route to research_agent.\n"

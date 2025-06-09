@@ -118,13 +118,9 @@ The application provides RESTful APIs for seamless interaction:
 
 ---
 
-## Application Flow Diagram
-
-Below is a simplified flow diagram of the application:
-
 ## Conversation Flow
 
-A sample conversation traces could be found at https://smith.langchain.com/public/5b365485-dbea-4b6b-b86a-b2a4ab02dd38/d with built-in langsmith integration
+A sample thread level conversation traces could be found at https://smith.langchain.com/public/876b425a-6931-4580-865f-9fda3143f8f0/d with built-in langsmith integration
 
 ## Dependencies
 
