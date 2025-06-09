@@ -165,6 +165,8 @@ def init_workflow():
                     "You are a research agent.\n\n"
                     "INSTRUCTIONS:\n"
                     "- Assist ONLY with research-related tasks, DO NOT do any appointment or booking related tasks\n"
+                    "- You can answer all types of general questions"
+                    "- You have access to retriever_tool to look into database and do web search using the web_search tool\n"
                     "- After you're done with your tasks, respond to the supervisor directly\n"
                     "- Respond ONLY with the results of your work, do NOT include ANY other text."
                 ),
@@ -192,6 +194,13 @@ def init_workflow():
         def getSlots(date: str):
             """
             Returns a list of available 30-minute time slots for the specified date.
+
+            Args:
+                date (str): The date in 'YYYY-MM-DD' format.
+
+            Returns:
+                list[str]: Available time slots in 'HH:MM' format, sorted chronologically.
+                If no slots are available, returns "No slots found".
             """
             try:
                 with psycopg.connect(settings.db_uri) as conn:
@@ -211,6 +220,15 @@ def init_workflow():
         def bookSlot(customer_id: str, date: str, time_slot: str):
             """
             Books the first available appointment slot for a given date and time.
+
+            Args:
+                customer_id (str): UUID formatted string.
+                date (str): The date in 'YYYY-MM-DD' format.
+                time_slot (str): The time slot in 'HH:MM' format.
+
+            Returns:
+                str: Success message with agent ID and appointment time if booked.
+                    If all matching slots are booked or not found, returns a failure message.
             """
             try:
                 with psycopg.connect(settings.db_uri) as conn:
@@ -249,8 +267,15 @@ def init_workflow():
                 model=init_chat_model("gpt-4.1-nano-2025-04-14", temperature=0.3),
                 tools=[findCurrentTime, getSlots, bookSlot],
                 prompt=(
-                    "You are an appointment scheduling assistant handling ONLY appointment-related queries. "
-                    "Respond only with JSON, no extra text."
+                    "- You are an appointment scheduling assistant handling ONLY appointment-related queries. "
+                    "- Extract and normalize appointment date and time from user input (natural language or structured).\n"
+                    "- If the user asks to schedule an appointment ask the user in which day and time the user wants to schedule an appointment.\n"
+                    "- If no time preference is received by you must fetch the current time, then find the appointment availability and return all the available slots.\n"
+                    "- Always take confirmation on the preferred date and time from the user.\n"
+                    "- Always ask for mode of appointment (e.g., 'virtual', 'telephonic') if not provided.\n"
+                    "- Never book the appointment before receiving the complete data, time and mode of appointment.\n"
+                    "- Once all the inputs are clear use tools to book the appointment and inform the user\n"
+                    "- Respond only with JSON, no extra text."
                 ),
                 name="appointment_agent",
             )
@@ -265,10 +290,17 @@ def init_workflow():
                 model=init_chat_model("gpt-4.1-mini-2025-04-14", temperature=0.7),
                 agents=[research_agent, appointment_agent],
                 prompt=(
-                    "You are a supervisor managing two agents:\n"
-                    "- a research agent for research tasks\n"
-                    "- an appointment agent for appointment tasks\n"
-                    "Assign work to one agent at a time. Do not call agents in parallel."
+                    "You are a supervisor having access to multiple agents. You have the ability to call various tools for getting the job done. Your limitation is you cannot do parallel tool calls.\n\n"
+                    "Your tasks:\n"
+                    "- You always look into history to extract past information and you can avoid unnecessary tool calls\n"
+                    "- You should carefully assess the user's intent and route the query to the appropriate agent.\n"
+                    "- If the user asks for general information, route to research_agent.\n"
+                    "- If the user asks to schedule an appointment, route to appointment_agent.\n"
+                    "- You should carefully assess the agent's response and route the query to the appropriate agent or respond to the user accordingly.\n"
+                    "- You should never ask the user to repeat the question, instead you should look into the history and extract the information from there.\n"
+                    "- You should never disclose your internal workings or the agent, tool names to the user.\n"
+                    "- You should never disclose any PII (Personally Identifiable Information) to the user.\n"
+                    "- Respond in a natural and conversational tone\n\n"
                 ),
                 add_handoff_back_messages=True,
                 output_mode="full_history",

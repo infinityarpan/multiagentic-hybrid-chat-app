@@ -101,6 +101,7 @@ The application provides RESTful APIs for seamless interaction:
 ### Database Design
 - **Why PostgreSQL?**
   - PostgreSQL is a robust relational database that supports extensions like PGVector for vector storage.
+  - When integrated with LangChain, it provides a powerful solution for persistent memory.
   - This facilitates a unified infrastructure for maintenance and scalability.
 
 ### API Design
@@ -114,7 +115,9 @@ The application provides RESTful APIs for seamless interaction:
 
 Below is a simplified flow diagram of the application:
 
+## Conversation Flow
 
+A sample conversation traces could be found at https://smith.langchain.com/public/5b365485-dbea-4b6b-b86a-b2a4ab02dd38/d with built-in langsmith integration
 
 ## Dependencies
 
