@@ -1,5 +1,5 @@
 import psycopg
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import uuid
 from dotenv import load_dotenv
 import os
@@ -65,7 +65,7 @@ def populate_time_slots_for_agent(agent_id, start_date, days=1):
 # Step 3: View Available Slots
 # -----------------------------------------
 def get_slots(agent_id, date_str):
-    with psycopg.connect(DB_CONN_STR) as conn:
+    with psycopg.connect(DB_URI) as conn:
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT time_slot FROM appointments
@@ -85,8 +85,13 @@ AGENTS = [
 
 if __name__ == "__main__":
     init_db()
+    
+    # Calculate the current date and a 1-month window
+    current_date = date.today().strftime("%Y-%m-%d")
+    days_in_window = 30  # 1-month window
+    
     for agent_id in AGENTS:
-        populate_time_slots_for_agent(agent_id, "2025-06-09", days=1)
-        slots = get_slots(agent_id, "2025-06-09")
-        print(f"\n🗓️ Available slots for agent {agent_id} on 2025-06-09:")
+        populate_time_slots_for_agent(agent_id, current_date, days=days_in_window)
+        slots = get_slots(agent_id, current_date)
+        print(f"\n🗓️ Available slots for agent {agent_id} starting from {current_date}:")
         print(slots)

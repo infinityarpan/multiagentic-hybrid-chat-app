@@ -304,7 +304,6 @@ def init_workflow():
                 agents=[research_agent, appointment_agent],
                 prompt=(
                     "- You are a supervisor having access to multiple agents.\n"
-                    "- You have the ability to call various agents but you can strictly call one agent at a time.\n"
                     "- You are good at understanding natural language.\n"
                     "- You always look into history to extract past information and you can avoid unnecessary tool calls\n"
                     "- You should carefully assess the user's intent and route the query to the appropriate agent.\n"

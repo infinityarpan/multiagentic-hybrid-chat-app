@@ -1,0 +1,46 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - ENV_FILE=.env
+    depends_on:
+      - db
+    command: >
+      sh -c "
+      until pg_isready -h db -p 5432; do
+        echo 'Waiting for database...';
+        sleep 2;
+      done;
+      python app/setup_scripts/create_agents.py &&
+      python app/setup_scripts/create_customers.py &&
+      python app/setup_scripts/create_appointments.py &&
+      python app/setup_scripts/download_reranker.py &&
+      uvicorn app.main:app --host 0.0.0.0 --port 8000
+      "
+
+  db:
+    image: ankane/pgvector
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+volumes:
+  postgres_data:
