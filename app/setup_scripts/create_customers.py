@@ -18,7 +18,7 @@ def init_customer_db():
         with conn.cursor() as cur:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS customers (
-                    custom_id UUID PRIMARY KEY,
+                    customer_id UUID PRIMARY KEY,
                     name TEXT NOT NULL,
                     email TEXT NOT NULL UNIQUE,
                     gender TEXT,
@@ -42,10 +42,10 @@ def insert_demo_customers():
             for name, email, gender, created_at, last_login in demo_customers:
                 custom_id = uuid.uuid4()
                 cur.execute("""
-                    INSERT INTO customers (custom_id, name, email, gender, created_at, last_login)
+                    INSERT INTO customers (customer_id, name, email, gender, created_at, last_login)
                     VALUES (%s, %s, %s, %s, %s, %s)
                     ON CONFLICT (email) DO NOTHING
-                """, (custom_id, name, email, gender, created_at, last_login))
+                """, (customer_id, name, email, gender, created_at, last_login))
             conn.commit()
     print("✅ Demo customers inserted.")
 
