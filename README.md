@@ -155,56 +155,33 @@ Ensure the database is set up with the appropriate schema before running the app
 Follow these steps to set up and run the application:
 
 ### 1. Clone the Repository
+Clone the repository and navigate to the project directory:
 ```bash
 git clone https://github.com/infinityarpan/multiagentic-hybrid-chat-app.git
 cd fastapi-app
 ```
 
-### 2. Set Up the Environment
-- Create a virtual environment (optional but recommended):
-  ```bash
-  python -m venv venv
-  source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-  ```
-- Install the required dependencies:
-  ```bash
-  pip install -r requirements.txt
-  ```
+### 2. Configure Environment Variables
+Create a `.env` file in the root directory and populate it with the required API keys, database URI, and other configurations:
+```env
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_TRACING=true
+TAVILY_API_KEY=<your-tavily-api-key>
+LANGSMITH_TRACING_V2=true
+LANGSMITH_TRACING=true
+LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+LANGSMITH_API_KEY=<your-langsmith-api-key>
+LANGSMITH_PROJECT=<your-langsmith-project>
+OPENAI_API_KEY=<your-openai-api-key>
+DB_URI=postgresql://<username>:<password>@<host>:<port>/<database>
+VECTOR_COLLECTION_NAME=<your-vector-collection-name>
+```
 
-### 3. Configure the Environment Variables
-- Update the `.env` file with your API keys, database URI, and other configurations:
-  ```env
-  LANGCHAIN_TRACING_V2=true
-  LANGCHAIN_TRACING=true
-  TAVILY_API_KEY=<your-tavily-api-key>
-  LANGSMITH_TRACING_V2=true
-  LANGSMITH_TRACING=true
-  LANGSMITH_ENDPOINT=https://api.smith.langchain.com
-  LANGSMITH_API_KEY=<your-langsmith-api-key>
-  LANGSMITH_PROJECT=<your-langsmith-project>
-  OPENAI_API_KEY=<your-openai-api-key>
-  DB_URI=postgresql://<username>:<password>@<host>:<port>/<database>
-  VECTOR_COLLECTION_NAME=<your-vector-collection-name>
-  ```
-
-### 4. Set Up the Database and Reranker
-- Ensure PostgreSQL is running and accessible.
-- Create the necessary tables for customers, agents and appointments.
-- Download the BAAI/bge-reranker-v2-m3 reranker
-- Run the database and reranker setup script to create the necessary tables and download the reranker:
-  ```bash
-  python app/setup_scripts/create_agents.py
-  python app/setup_scripts/create_customers.py
-  python app/setup_scripts/create_appointments.py
-  python app/setup_scripts/download_reranker.py
-  ```
-
-### 5. Run the Application
-- Start the FastAPI application:
-  ```bash
-  uvicorn app.main:app --port 8000 --reload
-  ```
-- The server will be available at `http://127.0.0.1:8000`.
+### 3. Start the Application with Docker
+Run the following command to build and start the Docker container. The application will be accessible at `http://127.0.0.1:8000`:
+```bash
+docker-compose up --build
+```
 
 ---
 
